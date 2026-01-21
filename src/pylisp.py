@@ -5,13 +5,6 @@ import inspect
 from opcode import opname, opmap
 import types
 
-python3 = sys.version_info > (3,)
-
-if python3:
-    unicode = str
-    long = int
-    raw_input = input
-
 # When true every code object produced is immediately disassembled
 _L_2adebug_2a = False
 
@@ -172,19 +165,34 @@ class Context(object):
             if op[0] == LABEL:
                 op[1].address = pc
             else:
-                pc += 1 if len(op) == 1 else 3
+                pc += 2  # Python 3.6+ wordcode: always 2 bytes per instruction
 
         for op in self.code:
             if op[0] != LABEL:
-                bytestr.append(op[0])
+                opcode = op[0]
+                arg = 0
                 if len(op) == 2:
                     v = op[1]
                     if isinstance(v, f_Llabel):
                         v = v.address
-                    bytestr.append(v & 255)
-                    bytestr.append(v >> 8)
+                    arg = v
 
-        bytestr = bytes(bytestr) if python3 else "".join(map(chr, bytestr))
+                # Python 3.6+ wordcode: handle EXTENDED_ARG for arguments > 255
+                if arg > 0xFFFFFF:
+                    bytestr.append(EXTENDED_ARG)
+                    bytestr.append((arg >> 24) & 0xFF)
+                if arg > 0xFFFF:
+                    bytestr.append(EXTENDED_ARG)
+                    bytestr.append((arg >> 16) & 0xFF)
+                if arg > 0xFF:
+                    bytestr.append(EXTENDED_ARG)
+                    bytestr.append((arg >> 8) & 0xFF)
+
+                # Emit the actual instruction (always 2 bytes: opcode + arg)
+                bytestr.append(opcode)
+                bytestr.append(arg & 0xFF)
+
+        bytestr = bytes(bytestr)
 
         flags = 0 if self.cellvars else (inspect.CO_NEWLOCALS | inspect.CO_OPTIMIZED)
 
@@ -195,9 +203,12 @@ class Context(object):
             flags |= inspect.CO_VARARGS
             self.args -= 1
 
-        co = types.CodeType(*([self.args,] +             # argcount
-                              ([0] if python3 else []) + # kw-only argcount
-                              [len(self.locals),         # nlocals
+        # Python 3.8+ added posonlyargcount as 2nd parameter
+        if sys.version_info >= (3, 8):
+            co = types.CodeType(self.args,               # argcount
+                               0,                        # posonlyargcount (new in 3.8)
+                               0,                        # kwonlyargcount
+                               len(self.locals),         # nlocals
                                self.maxstack,            # stacksize
                                flags,                    # flags
                                bytestr,                  # bytecode
@@ -209,7 +220,23 @@ class Context(object):
                                0,                        # firstlineno
                                bytes(),                  # lnotab
                                tuple(self.freevars),     # freevars
-                               tuple(self.cellvars)]))   # cellvars
+                               tuple(self.cellvars))     # cellvars
+        else:
+            co = types.CodeType(self.args,               # argcount
+                               0,                        # kwonlyargcount
+                               len(self.locals),         # nlocals
+                               self.maxstack,            # stacksize
+                               flags,                    # flags
+                               bytestr,                  # bytecode
+                               tuple(self.constants),    # constants
+                               tuple(self.names),        # names
+                               tuple(self.locals),       # varnames
+                               "<bytecode>",             # filename
+                               name,                     # name
+                               0,                        # firstlineno
+                               bytes(),                  # lnotab
+                               tuple(self.freevars),     # freevars
+                               tuple(self.cellvars))     # cellvars
         if _L_2adebug_2a:
             f_Lout("Created callable %s (stacksize = %i)\n" % (name, self.maxstack))
             f_Lout("  local = %r\n" % self.local)
@@ -225,7 +252,7 @@ class Context(object):
 # Compiles an expression to current compiler context
 def f_Lcompile(x):
     global ctx
-    if x is None or isinstance(x, (str, int, long, float, bool)):
+    if x is None or isinstance(x, (str, int, float, bool)):
         if x not in ctx.constants:
             ctx.constants.append(x)
         ctx.code.append((LOAD_CONST, ctx.constants.index(x)))
@@ -361,7 +388,8 @@ def f_Lcompile(x):
                     ctx.stack(1, -3)
                 else:
                     ctx.stack(-2)
-                ctx.code.append((MAKE_CLOSURE, 0))
+                # In Python 3, MAKE_FUNCTION with flag 0x08 indicates closure
+                ctx.code.append((MAKE_FUNCTION, 0x08))
             else:
                 # Function (why not an empty closure?)
                 ctx.code.append((LOAD_CONST, len(ctx.constants)-1))
@@ -498,7 +526,7 @@ def balanced(x):
 curr = ""
 while True:
     try:
-        t = raw_input("> " if balanced(curr) else "  ")
+        t = input("> " if balanced(curr) else "  ")
     except EOFError:
         break
     curr += t + "\n"
