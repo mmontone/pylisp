@@ -484,6 +484,12 @@ def parse(x, f):
 def f_Limport(x):
     globals()[x] = importlib.import_module(x)
 
+def f_Lhelp(x):
+    help(x)
+
+def f_Ldoc(x):
+    print(x.__doc__)
+
 def f_Lpython(x):
     return eval(x)
 
