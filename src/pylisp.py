@@ -494,6 +494,9 @@ def f_Lhelp(x):
 def f_Ldoc(x):
     print(x.__doc__)
 
+def f_Ltype(x):
+    return type(x)
+
 def f_Lpython(x):
     return eval(x)
 
