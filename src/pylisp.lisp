@@ -440,5 +440,3 @@
            (lambda (self ,@args)
              ,@(xlist body)))
      ',name))
-
-(print "PyLisp 0.007")

@@ -539,3 +539,29 @@ def f_Lload(x):
         parse(f.read(), f_Leval)
 
 f_Lload("pylisp.lisp")
+
+def balanced(x):
+    tk = tokenize(x)
+    return x.count("(") == x.count(")")
+
+def repl():
+    print("PyLisp 0.007")
+    curr = ""
+    while True:
+        try:
+            t = input("> " if balanced(curr) else "  ")
+        except EOFError:
+            break
+        curr += t + "\n"
+        if balanced(curr):
+            try:
+                parse(curr, f_Leval_2bprint)
+            except Exception as e:
+                print("ERROR: %s" % e)
+            curr = ""
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        f_Lload(sys.argv[1])
+    else:
+        repl()
