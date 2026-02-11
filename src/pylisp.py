@@ -249,6 +249,9 @@ class Context(object):
             f_Lout("-" * 70 + "\n")
         return co
 
+def ispyname(name):
+    return name[:7] == "_Lpy_3a"
+
 # Compiles an expression to current compiler context
 def f_Lcompile(x):
     global ctx
@@ -260,7 +263,7 @@ def f_Lcompile(x):
         return
 
     if isinstance(x, Symbol):
-        if x.name[:7] == "_Lpy_3a":
+        if ispyname(x.name):
             ctx.names.append(f_Ldemangle(x.name)[3:])
             ctx.code.append((LOAD_GLOBAL, len(ctx.names)-1))
         else:
