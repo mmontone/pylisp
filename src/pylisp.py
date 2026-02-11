@@ -481,6 +481,9 @@ def parse(x, f):
     while tokens:
         f(r())
 
+def f_Limport(x):
+    globals()[x] = importlib.import_module(x)
+
 def f_Lpython(x):
     return eval(x)
 
