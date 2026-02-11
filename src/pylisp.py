@@ -4,6 +4,7 @@ import dis
 import inspect
 from opcode import opname, opmap
 import types
+import importlib
 
 # When true every code object produced is immediately disassembled
 _L_2adebug_2a = False
