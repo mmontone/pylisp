@@ -427,7 +427,9 @@ def f_Lcompile(x):
             f_Lcompile([_setq, f_Lintern("py:m" + x[1].name), [_lambda] + x[2:]])
             return
 
-        ctx.code.append((LOAD, "f" + s.name))
+        # function call
+        fname = pyname(s.name) if ispyname(s.name) else "f" + s.name
+        ctx.code.append((LOAD, fname))
         ctx.stack(1)
         for y in x[1:]:
             f_Lcompile(y)
