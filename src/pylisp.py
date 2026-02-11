@@ -297,7 +297,7 @@ def f_Lcompile(x):
             f_Lcompile(x[2])
             ctx.code.append((DUP_TOP,))
             s = x[1]
-            if s.name[:7] == "_Lpy_3a":
+            if ispyname(s.name):
                 ctx.code.append((STORE, f_Ldemangle(s.name)[3:]))
             else:
                 ctx.code.append((STORE, s.name))
