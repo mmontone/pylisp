@@ -253,6 +253,9 @@ class Context(object):
 def ispyname(name):
     return name[:7] == "_Lpy_3a"
 
+def pyname(name):
+    return f_Ldemangle(name)[3:]
+    
 # Compiles an expression to current compiler context
 def f_Lcompile(x):
     global ctx
@@ -265,7 +268,7 @@ def f_Lcompile(x):
 
     if isinstance(x, Symbol):
         if ispyname(x.name):
-            ctx.names.append(f_Ldemangle(x.name)[3:])
+            ctx.names.append(pyname(x.name))
             ctx.code.append((LOAD_GLOBAL, len(ctx.names)-1))
         else:
             ctx.code.append((LOAD, x.name))
@@ -299,7 +302,7 @@ def f_Lcompile(x):
             ctx.code.append((DUP_TOP,))
             s = x[1]
             if ispyname(s.name):
-                ctx.code.append((STORE, f_Ldemangle(s.name)[3:]))
+                ctx.code.append((STORE, pyname(s.name)))
             else:
                 ctx.code.append((STORE, s.name))
             ctx.stack(2, -1)
@@ -345,7 +348,7 @@ def f_Lcompile(x):
             octx = ctx
             ctx = Context()
             ctx.outer = octx.outer.copy()
-            argnames = [f_Ldemangle(v.name)[3:] if v.name[:7] == "_Lpy_3a" else v.name
+            argnames = [pyname(v.name) if ispyname(v.name) else v.name
                         for v in x[1]]
             rest = False
             if argnames and argnames[-1][:5] == '_L_2a' and len(argnames[-1]) > 5:
