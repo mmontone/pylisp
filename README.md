@@ -29,3 +29,47 @@ Example session:
     25
     --> None
     > 
+    
+    
+## REPL
+
+Load `pylisp.py`:
+
+```
+~/pylisp/src$ python pylisp.py
+```
+
+## Examples
+
+When `pylisp.py` is passed a Lisp file, it is executed.
+
+```
+~/pylisp/src$ python pylisp.py ../examples/py8q.lisp 
+```
+
+## FFI
+
+To access Python, prefix identifiers with `py:` .
+
+Example:
+
+```(py:dir py:sys)```
+
+## Access to objects
+
+Use dot syntax:
+
+```
+(. py:sys __doc__)
+```
+
+Use funcall for invoking methods on an object:
+
+```
+(import "json")
+(funcall (. py:json dumps) (list 1 2 3))
+```
+
+## Debugging
+
+`(setq *debug* True)`
